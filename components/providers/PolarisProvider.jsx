@@ -1,25 +1,28 @@
-import { useCallback } from "react";
 import { AppProvider } from "@shopify/polaris";
 import "@shopify/polaris/build/esm/styles.css";
 import { getPolarisTranslations } from "../../utils/i18nUtils";
+import { BrowserRouter, Link as ReactRouterLink } from 'react-router-dom';
+
+const IS_EXTERNAL_LINK_REGEX = /^(?:[a-z][a-z\d+.-]*:|\/\/)/;
 
 function AppBridgeLink({ url, children, external, ...rest }) {
-  const handleClick = useCallback(() => window.open(url, "_self"), [url]);
-
-  const IS_EXTERNAL_LINK_REGEX = /^(?:[a-z][a-z\d+.-]*:|\/\/)/;
-
+  // react-router only supports links to pages it can handle itself. It does not
+  // support arbirary links, so anything that is not a path-based link should
+  // use a reglar old `a` tag
   if (external || IS_EXTERNAL_LINK_REGEX.test(url)) {
+    rest.target = '_blank';
+    rest.rel = 'noopener noreferrer';
     return (
-      <a {...rest} href={url} target="_blank" rel="noopener noreferrer">
+      <a href={url} {...rest}>
         {children}
       </a>
     );
   }
 
   return (
-    <a {...rest} onClick={handleClick}>
+    <ReactRouterLink to={url} {...rest}>
       {children}
-    </a>
+    </ReactRouterLink>
   );
 }
 
@@ -47,8 +50,10 @@ export function PolarisProvider({ children }) {
   const translations = getPolarisTranslations();
 
   return (
-    <AppProvider i18n={translations} linkComponent={AppBridgeLink}>
-      {children}
-    </AppProvider>
+    <BrowserRouter>
+      <AppProvider i18n={translations} linkComponent={AppBridgeLink}>
+        {children}
+      </AppProvider>
+    </BrowserRouter>
   );
 }
